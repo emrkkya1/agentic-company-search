@@ -51,23 +51,38 @@ You can search for a specific location using the command-line interface:
 
 ```bash
 # Syntax
-python -m src.main <City> <Start-Date> <End-Date> [OPTIONS]
+python -m src.main find-companies <City> <Start-Date> <End-Date> [OPTIONS]
 
 # Example: Search for companies in Berlin for the year 2025
-python -m src.main "Berlin" "2025-01-01" "2025-12-31"
+python -m src.main find-companies "Berlin" "2025-01-01" "2025-12-31" --save-result
 ```
 
 **Options:**
 - `--save-result / --no-save-result`: Save the output to JSON (Default: True).
 - `--output-path`: Specify a custom output file path.
 
-### 2. Batch Processing for Europe
-To scan the top 15 European tech cities (including Berlin, Amsterdam, Paris, etc.) automatically:
+### 2. Batch Processing (New!)
+You can scan multiple locations at once, or use the built-in "Europe Tech Hubs" preset. This replaces the old shell script.
 
+**Run for specific locations:**
 ```bash
-./run_europe_cities.sh
+python -m src.main run-batch "New York" "San Francisco" "Tokyo"
 ```
-*This script includes rate limiting and error handling to ensure smooth execution.*
+
+**Run for the top European tech hubs (Berlin, Paris, Amsterdam, etc.):**
+```bash
+python -m src.main run-batch --europe
+```
+
+**Mix both:**
+```bash
+python -m src.main run-batch "London" --europe
+```
+
+**Options:**
+- `--europe`: Include 15 major European tech hubs.
+- `--time-start`, `--time-end`: Date range (Default: 2025 full year).
+- `--output-dir`: JSON output directory (Default: `results/`).
 
 ### 3. Process and Aggregate Results
 After running searches, you will have multiple JSON files in the `results/` directory. Use the processing script to consolidate them into a single, clean list:
@@ -89,13 +104,13 @@ This will:
 ├── src/                        # Source code
 │   ├── agents/                 # AI Agents for finding summits and companies
 │   ├── service/                # Business logic orchestration
+│   │   ├── companies_service/  # Company finding logic (batch & single)
 │   ├── models/                 # Data models (Pydantic)
 │   ├── adapters/               # API adapters (Gemini)
 │   ├── config.py               # Configuration settings
 │   └── main.py                 # CLI entry point
 ├── results/                    # Directory where search results are saved
 ├── process_companies.py        # Script to filter and aggregate results
-├── run_europe_cities.sh        # Automation script for EU cities
 ├── requirements.txt            # Python dependencies
 └── README.md                   # Project documentation
 ```
@@ -103,5 +118,5 @@ This will:
 ## 🔧 Customization
 
 - **Adjust Filters**: Edit `process_companies.py` to change allowed scales (e.g., add "Large") or excluded countries.
-- **Modify Cities**: Edit `run_europe_cities.sh` to change the list of target cities.
+- **Modify Batch Cities**: Edit `src/service/companies_service/batch_service.py` to change the `EUROPE_TECH_HUBS` list.
 - **Model Settings**: Edit `src/config.py` or use environment variables to change the Gemini model version or temperature.

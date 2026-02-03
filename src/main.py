@@ -11,6 +11,7 @@ import typer
 
 from src.config import get_logger, setup_logging
 from src.models.input.time_interval import TimeInterval
+from src.service.companies_service.batch_service import BatchCompanyService
 from src.service.companies_service.service import CompaniesService
 
 # Initialize logging early
@@ -68,6 +69,55 @@ def find_companies(
         typer.echo(f"Saved {len(payload)} results to {output_path}")
     else:
         typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+@app.command()
+def run_batch(
+    locations: list[str] = typer.Argument(
+        None,
+        help="List of cities or countries to search.",
+    ),
+    europe: bool = typer.Option(
+        False,
+        "--europe",
+        help="Include major European tech hubs.",
+    ),
+    time_start: str = typer.Option(
+        "2025-01-01",
+        "--time-start",
+        help="Start date (YYYY-MM-DD). Default: 2025-01-01",
+    ),
+    time_end: str = typer.Option(
+        "2025-12-31",
+        "--time-end",
+        help="End date (YYYY-MM-DD). Default: 2025-12-31",
+    ),
+    output_dir: Path | None = typer.Option(
+        None,
+        "--output-dir",
+        help="Directory to save JSON results. Default: results/",
+    ),
+) -> None:
+    """Run the company finder for a batch of locations."""
+    start_date = parse_iso_date(time_start)
+    end_date = parse_iso_date(time_end)
+
+    target_locations = []
+    if locations:
+        target_locations.extend(locations)
+    
+    if europe:
+        target_locations.extend(BatchCompanyService.EUROPE_TECH_HUBS)
+    
+    # Remove duplicates while preserving order
+    target_locations = list(dict.fromkeys(target_locations))
+    
+    if not target_locations:
+        typer.echo("Error: No locations provided. Use arguments or --europe flag.")
+        raise typer.Exit(code=1)
+
+    service = BatchCompanyService()
+    service.run(locations=target_locations, start_date=start_date, end_date=end_date, output_dir=output_dir)
 
 
 def main() -> None:
